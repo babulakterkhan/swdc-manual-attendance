@@ -21,7 +21,7 @@ th, td {
 }
 .present { background-color: #b2f2bb; } /* green */
 .absent { background-color: #ffa8a8; } /* red */
-input[type="text"], input[type="month"] {
+input[type="text"], input[type="month"], input[type="date"] {
     width: 100%;
     max-width: 400px;
     padding: 6px;
@@ -36,19 +36,19 @@ button {
 }
 @media screen and (max-width: 600px) {
     th, td { font-size: 14px; padding: 6px; }
-    input[type="text"], input[type="month"] { max-width: 100%; }
+    input[type="text"], input[type="month"], input[type="date"] { max-width: 100%; }
 }
 </style>
 </head>
 <body>
 
-<h2 style="color: blue;">SHAHZADPUR WOMEN'S DEGREE COLLEGE</h2>
-<h4><center>Shahzadpur, Sirajgonj</center></h4>
-<h3><center>Teacher Attendance System</center></h3>
+<h2>Teacher Attendance System</h2>
 
 <input type="text" id="searchInput" placeholder="Search by Name or ID..." onkeyup="filterTable()">
-<center><label for="monthFilter">Filter by Month:</label></center>
+<label for="monthFilter">Filter by Month:</label>
 <input type="month" id="monthFilter" onchange="filterByMonth()">
+<label for="dateFilter">Filter by Date:</label>
+<input type="date" id="dateFilter" onchange="filterByDate()">
 
 <table id="attTable">
 <tr>
@@ -60,7 +60,7 @@ button {
 <th>Time</th>
 </tr>
 
-<!-- 68 teacher rows (default Absent) -->
+<!-- 2 teacher rows -->
 <tr class="absent"><td>456202</td><td>MD. RUHUL AMIN</td><td>Principal</td><td><select onchange="updateStatus(this)"><option>Absent</option><option>Present</option></select></td><td class="date"></td><td class="time"></td></tr>
 <tr class="absent"><td>456204</td><td>MD. ENAMUL KABIR</td><td>Asst. Professor</td><td><select onchange="updateStatus(this)"><option>Absent</option><option>Present</option></select></td><td class="date"></td><td class="time"></td></tr>
 <tr class="absent"><td>456205</td><td>MD. RAFIQUL ISLAM</td><td>Asst. Professor</td><td><select onchange="updateStatus(this)"><option>Absent</option><option>Present</option></select></td><td class="date"></td><td class="time"></td></tr>
@@ -124,8 +124,6 @@ button {
 <tr class="absent"><td>456267</td><td>MD. MEHEDI HASAN</td><td>Lab Assistant</td><td><select onchange="updateStatus(this)"><option>Absent</option><option>Present</option></select></td><td class="date"></td><td class="time"></td></tr>
 <tr class="absent"><td>456268</td><td>MD. SHOHIDUL ISLAM</td><td>Asst. Professor</td><td><select onchange="updateStatus(this)"><option>Absent</option><option>Present</option></select></td><td class="date"></td><td class="time"></td></tr>
 <tr class="absent"><td>456269</td><td>MST. AMBIA KHATUN</td><td>Lecturer</td><td><select onchange="updateStatus(this)"><option>Absent</option><option>Present</option></select></td><td class="date"></td><td class="time"></td></tr>
-
-<!-- copy similar rows for all 68 teachers using the pattern above -->
 
 </table>
 
@@ -201,6 +199,20 @@ function filterByMonth() {
             const cellDate = new Date(dateCell.innerText);
             const yearMonth = cellDate.getFullYear() + "-" + String(cellDate.getMonth()+1).padStart(2,"0");
             tr[i].style.display = (input === "" || input === yearMonth) ? "" : "none";
+        }
+    }
+}
+
+function filterByDate() {
+    const input = document.getElementById("dateFilter").value; // yyyy-mm-dd
+    const table = document.getElementById("attTable");
+    const tr = table.getElementsByTagName("tr");
+    for(let i=1;i<tr.length;i++){
+        const dateCell = tr[i].getElementsByClassName("date")[0];
+        if(dateCell){
+            const cellDate = new Date(dateCell.innerText);
+            const formattedCell = cellDate.getFullYear() + "-" + String(cellDate.getMonth()+1).padStart(2,"0") + "-" + String(cellDate.getDate()).padStart(2,"0");
+            tr[i].style.display = (input === "" || input === formattedCell) ? "" : "none";
         }
     }
 }
