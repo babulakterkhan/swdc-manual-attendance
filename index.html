@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Teacher Attendance System</title>
+<title>Teacher's Attendance</title>
 <style>
 body { font-family: Arial, sans-serif; margin: 10px; }
-h2 { text-align: center; }
+h2, h3 { text-align: center; margin: 5px 0; }
 table {
     width: 100%;
     max-width: 1200px;
@@ -21,6 +21,7 @@ th, td {
 }
 .present { background-color: #b2f2bb; } /* green */
 .absent { background-color: #ffa8a8; } /* red */
+
 input[type="text"], input[type="month"], input[type="date"] {
     width: 100%;
     max-width: 400px;
@@ -28,12 +29,30 @@ input[type="text"], input[type="month"], input[type="date"] {
     margin: 10px auto;
     display: block;
 }
+
+/* বাটন স্টাইল */
+.btn-container { text-align: center; margin: 20px; }
 button {
-    padding: 8px 12px;
-    margin: 10px auto;
+    padding: 10px 20px;
+    margin: 5px;
     cursor: pointer;
-    display: block;
+    font-weight: bold;
 }
+.print-btn { background-color: #007bff; color: white; border: none; border-radius: 5px; }
+.csv-btn { background-color: #28a745; color: white; border: none; border-radius: 5px; }
+
+/* প্রিন্ট করার সময় যা যা হাইড হবে */
+@media print {
+    #login-screen, #searchInput, label, #monthFilter, #dateFilter, .btn-container, select {
+        display: none !important;
+    }
+    body { margin: 0; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border: 1px solid black; padding: 5px; font-size: 12px; }
+    tr.present { background-color: #b2f2bb !important; -webkit-print-color-adjust: exact; }
+    tr.absent { background-color: #ffa8a8 !important; -webkit-print-color-adjust: exact; }
+}
+
 @media screen and (max-width: 600px) {
     th, td { font-size: 14px; padding: 6px; }
     input[type="text"], input[type="month"], input[type="date"] { max-width: 100%; }
@@ -50,18 +69,29 @@ button {
 <link rel="manifest" href="manifest.json">
 <body>
 
+<div id="login-screen" style="position:fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+  <h3>অনুগ্রহ করে পাসওয়ার্ড দিন</h3>
+  <input type="password" id="pass-input" style="padding:10px; margin-bottom:10px; border-radius:5px; border:1px solid #ccc;">
+  <button onclick="checkPass()" style="background:#28a745; color:white; border:none; border-radius:5px;">Login</button>
+  <p id="error-msg" style="color:red; display:none;">ভুল পাসওয়ার্ড!</p>
+</div>
 
 <h2>SHAHZADPUR WOMEN'S DEGREE COLLEGE</h2>
-<h2>Teacher Attendance System</h2>
-<h2>Teacher Attendance System</h2>
+<h2 style="font-size: 18px; color: #555;">Teacher's Attendance</h2>
+
+<h3 id="topDateDisplay" style="color: #007bff;">Date: </h3>
 
 <input type="text" id="searchInput" placeholder="Search by Name or ID..." onkeyup="filterTable()">
-<label for="monthFilter">Filter by Month:</label>
-<input type="month" id="monthFilter" onchange="filterByMonth()">
-<label for="dateFilter">Filter by Date:</label>
-<input type="date" id="dateFilter" onchange="filterByDate()">
+
+<div style="text-align: center;">
+    <label for="monthFilter">Filter by Month:</label>
+    <input type="month" id="monthFilter" onchange="filterByMonth()" style="display:inline-block; width:auto;">
+    <label for="dateFilter">Filter by Date:</label>
+    <input type="date" id="dateFilter" onchange="filterByDate()" style="display:inline-block; width:auto;">
+</div>
 
 <table id="attTable">
+<thead>
 <tr>
 <th>ID</th>
 <th>Name</th>
@@ -70,8 +100,8 @@ button {
 <th>Date</th>
 <th>Time</th>
 </tr>
-
-<!-- 2 teacher rows -->
+</thead>
+<tbody>
 <tr class="absent"><td>456202</td><td>MD. RUHUL AMIN</td><td>Principal</td><td><select onchange="updateStatus(this)"><option>Absent</option><option>Present</option></select></td><td class="date"></td><td class="time"></td></tr>
 <tr class="absent"><td>456204</td><td>MD. ENAMUL KABIR</td><td>Asst. Professor</td><td><select onchange="updateStatus(this)"><option>Absent</option><option>Present</option></select></td><td class="date"></td><td class="time"></td></tr>
 <tr class="absent"><td>456205</td><td>MD. RAFIQUL ISLAM</td><td>Asst. Professor</td><td><select onchange="updateStatus(this)"><option>Absent</option><option>Present</option></select></td><td class="date"></td><td class="time"></td></tr>
@@ -136,17 +166,38 @@ button {
 <tr class="absent"><td>456268</td><td>MD. SHOHIDUL ISLAM</td><td>Asst. Professor</td><td><select onchange="updateStatus(this)"><option>Absent</option><option>Present</option></select></td><td class="date"></td><td class="time"></td></tr>
 <tr class="absent"><td>456269</td><td>MST. AMBIA KHATUN</td><td>Lecturer</td><td><select onchange="updateStatus(this)"><option>Absent</option><option>Present</option></select></td><td class="date"></td><td class="time"></td></tr>
 
+</tbody>
 </table>
 
-<button onclick="downloadCSV()">Download CSV</button>
+<div class="btn-container">
+    <button class="csv-btn" onclick="downloadCSV()">Download CSV</button>
+    <button class="print-btn" onclick="printReport()">Print Attendance</button>
+</div>
 
 <script>
-// Set current date for all rows on page load
+// পাসওয়ার্ড চেক
+function checkPass() {
+  const input = document.getElementById('pass-input').value;
+  const correctPass = "12345678"; 
+  if (input === correctPass) {
+    document.getElementById('login-screen').style.display = 'none';
+  } else {
+    document.getElementById('error-msg').style.display = 'block';
+  }
+}
+
+// প্রিন্ট ফাংশন
+function printReport() {
+    window.print();
+}
+
+// আজকের তারিখ সেট করা
 document.addEventListener("DOMContentLoaded", () => {
-    const rows = document.querySelectorAll("#attTable tr");
-    const today = new Date().toLocaleDateString();
-    rows.forEach((row, index) => {
-        if(index === 0) return; // skip header
+    const today = new Date().toLocaleDateString('en-GB'); // DD/MM/YYYY format
+    document.getElementById("topDateDisplay").innerText = "Date: " + today;
+
+    const rows = document.querySelectorAll("#attTable tbody tr");
+    rows.forEach((row) => {
         const dateCell = row.querySelector(".date");
         if(dateCell) dateCell.innerText = today;
     });
@@ -201,31 +252,25 @@ function filterTable(){
 }
 
 function filterByMonth() {
-    const input = document.getElementById("monthFilter").value; // yyyy-mm
-    const table = document.getElementById("attTable");
-    const tr = table.getElementsByTagName("tr");
-    for(let i=1; i<tr.length; i++){
-        const dateCell = tr[i].getElementsByClassName("date")[0];
-        if(dateCell){
-            const cellDate = new Date(dateCell.innerText);
-            const yearMonth = cellDate.getFullYear() + "-" + String(cellDate.getMonth()+1).padStart(2,"0");
-            tr[i].style.display = (input === "" || input === yearMonth) ? "" : "none";
-        }
-    }
+    const input = document.getElementById("monthFilter").value; 
+    const tr = document.querySelectorAll("#attTable tbody tr");
+    tr.forEach(row => {
+        const dateCell = row.querySelector(".date");
+        const parts = dateCell.innerText.split('/');
+        const rowMonth = `${parts[2]}-${parts[1]}`; // YYYY-MM
+        row.style.display = (input === "" || input === rowMonth) ? "" : "none";
+    });
 }
 
 function filterByDate() {
-    const input = document.getElementById("dateFilter").value; // yyyy-mm-dd
-    const table = document.getElementById("attTable");
-    const tr = table.getElementsByTagName("tr");
-    for(let i=1;i<tr.length;i++){
-        const dateCell = tr[i].getElementsByClassName("date")[0];
-        if(dateCell){
-            const cellDate = new Date(dateCell.innerText);
-            const formattedCell = cellDate.getFullYear() + "-" + String(cellDate.getMonth()+1).padStart(2,"0") + "-" + String(cellDate.getDate()).padStart(2,"0");
-            tr[i].style.display = (input === "" || input === formattedCell) ? "" : "none";
-        }
-    }
+    const input = document.getElementById("dateFilter").value; 
+    const tr = document.querySelectorAll("#attTable tbody tr");
+    tr.forEach(row => {
+        const dateCell = row.querySelector(".date");
+        const parts = dateCell.innerText.split('/');
+        const formattedCell = `${parts[2]}-${parts[1]}-${parts[0]}`; // YYYY-MM-DD
+        row.style.display = (input === "" || input === formattedCell) ? "" : "none";
+    });
 }
 </script>
 
